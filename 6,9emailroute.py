@@ -1,21 +1,22 @@
 # router.py
 
 from fastapi import APIRouter, Request, HTTPException
-from mcpserver import mcp
-from mcp.types import ToolOutput
+from mcpserver import mcp  # This must be your FastMCP instance
 
 route = APIRouter()
 
 @route.post("/invoke", tags=["MCP"])
 async def invoke_tool(request: Request):
     """
-    Generic MCP tool tester endpoint.
+    Generic tool tester endpoint. POST a tool name and its input.
 
-    Input JSON:
+    Example JSON:
     {
-        "tool": "tool_name",
+        "tool": "send_email",
         "input": {
-            ...tool_args...
+            "subject": "Hi",
+            "body": "<p>Hello!</p>",
+            "receivers": "you@example.com"
         }
     }
     """
@@ -27,19 +28,17 @@ async def invoke_tool(request: Request):
         if not tool_name:
             raise HTTPException(status_code=400, detail="Missing 'tool' field")
 
-        # Look up the tool in the registered tools list
         tool = next((t for t in mcp.tools if t.name == tool_name), None)
         if not tool:
             raise HTTPException(status_code=404, detail=f"Tool '{tool_name}' not found")
 
-        # Invoke the tool with the input
-        output: ToolOutput = await tool.invoke(tool_input)
+        output = await tool.invoke(tool_input)
 
         return {
             "status": "success",
             "tool": tool_name,
-            "output_type": output.type,
-            "output_content": output.text
+            "output_type": getattr(output, "type", "text"),
+            "output_content": getattr(output, "text", str(output))
         }
 
     except HTTPException:
