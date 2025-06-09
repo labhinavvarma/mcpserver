@@ -1,25 +1,7 @@
-# router.py
-
-from fastapi import APIRouter, Request, HTTPException
-from mcpserver import mcp  # This must be your FastMCP instance
-
-route = APIRouter()
+import traceback
 
 @route.post("/invoke", tags=["MCP"])
 async def invoke_tool(request: Request):
-    """
-    Generic tool tester endpoint. POST a tool name and its input.
-
-    Example JSON:
-    {
-        "tool": "send_email",
-        "input": {
-            "subject": "Hi",
-            "body": "<p>Hello!</p>",
-            "receivers": "you@example.com"
-        }
-    }
-    """
     try:
         payload = await request.json()
         tool_name = payload.get("tool")
@@ -44,4 +26,5 @@ async def invoke_tool(request: Request):
     except HTTPException:
         raise
     except Exception as e:
+        traceback.print_exc()  # 👈 Print full error trace to console
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
