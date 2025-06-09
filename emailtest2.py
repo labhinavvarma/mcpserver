@@ -1,28 +1,27 @@
-import asyncio
-import json
-from mcp.client.sse import sse_client
-from mcp import ClientSession
+import requests
 
-# ✅ Replace with your actual MCP server's public IP or hostname
-MCP_SSE_URL = "http://<EC2-IP>:8000/sse"
+# Replace with your MCP server's actual IP or DNS
+SERVER_URL = "http://<EC2-IP>:8000/invoke"
 
-# ✅ Input to the MCP tool
-email_input = {
-    "subject": "Test Email from MCP Client",
-    "body": "<p>This is a test email triggered using MCP streaming.</p>",
-    "receivers": "your-email@example.com"
+# Define the payload to trigger the send_email tool
+payload = {
+    "tool": "send_email",
+    "input": {
+        "subject": "📨 MCP Email Test",
+        "body": "<p>This is a test email sent via MCP /invoke endpoint.</p>",
+        "receivers": "your-email@example.com"  # <-- replace with a valid email
+    }
 }
 
-# ✅ Main client logic
-async def send_test_email():
-    async with sse_client(MCP_SSE_URL) as (read_stream, write_stream):
-        async with ClientSession(read_stream, write_stream) as session:
-            result = await session.invoke({
-                "tool": "send_email",
-                "input": email_input
-            })
-            print("📧 Tool Response:")
-            print(json.dumps(result, indent=2))
+def send_test_email():
+    try:
+        print(f"📡 Sending request to MCP server at {SERVER_URL}...")
+        response = requests.post(SERVER_URL, json=payload)
+        response.raise_for_status()
+        print("✅ Email tool response:")
+        print(response.json())
+    except requests.exceptions.RequestException as e:
+        print("❌ Request failed:", e)
 
 if __name__ == "__main__":
-    asyncio.run(send_test_email())
+    send_test_email()
